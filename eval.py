@@ -10,14 +10,11 @@ import matplotlib.pyplot as plt
 from sane import Sane
 from model import Model
 
-"""
-Датасет и подготовка данных
-"""
-data = load_iris()
+
+data = load_wine()
 X = data["data"]
 Y = data["target"]
 
-# Нормализация входных векторов
 X = normalize(X, norm='max')
 X, Y = shuffle(X, Y, random_state=0)
 X_train, X_test, y_train, y_test = train_test_split(X, Y, 
@@ -28,47 +25,14 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
                                             test_size=0.4, 
                                             random_state=0)
 
-"""
-Общие настройки
-"""
-# Число эпох
-n_epoches = 10000
-# Общее количество нейронов в популяции
-total_number_neuron = 2000
-# Общее количество комбинаций нейронов
-total_number_blueprints = 500
-# Количество скрытых нейронов в нейронной сети
+
+num_input_neurons = X.shape[1]
+num_output_neurons = np.unique(Y).shape[0]
 number_hidden_neurons = 100
-# Количество связей у нейрона
-number_neuron_connection = 7
 
 patience = 30
 
-# Количество нейронов входного слоя
-num_input_neurons = X.shape[1]
-# Количество нейронов выходного слоя
-num_output_neurons = np.unique(Y).shape[0]
-
-model_id = 4
-
-with open('outputs/models/hyperparameters.txt', 'a') as f:
-    f.write('Номер модели = ' + str(model_id) + '\n')
-    f.write('Кол-во нейронов скрытого слоя = ' + str(number_hidden_neurons) + '\n')
-    f.write('Кол-во связей у нейрона = ' + str(number_neuron_connection) + '\n')
-    f.write('-------------------------------------------------------------\n\n')
-
-ga_instance = Sane(
-    n_epoches, log_loss, 
-    total_number_neuron, 
-    num_input_neurons,
-    num_output_neurons,
-    number_hidden_neurons,
-    number_neuron_connection, 
-    total_number_blueprints,
-    patience=patience, act_func='relu'
-)
-
-_, loss_arr = ga_instance.run(X_train, y_train, X_val, y_val, model_id)
+model_id = 3
 
 best_model = np.load(f"./outputs/models/model_{model_id}.npy")
 model = Model(

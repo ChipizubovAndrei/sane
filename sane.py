@@ -82,7 +82,6 @@ class Sane:
                 preds = model.forward(X_train, f=self.act_func)
                 loss = self.fitness_func(y_train, preds)
                 blueprint_fitness[bp_id] = loss
-            
             """
             1.2 Сортировка моделей от лучшей к худшей
             """
@@ -104,23 +103,6 @@ class Sane:
             loss_arr.append(best_loss_val)
             self.logger(epoch, model_id, [best_loss_train, best_loss_val])
             self.early_stopping(best_loss_val, net, epoch, model_id)
-
-
-
-            if (epoch % 10 == 0):
-                arr_to_save = np.zeros((population[blueprints[0]].shape[0], 
-                                        int(population[blueprints[0]].shape[1] / 2)),
-                                        dtype=np.int32)
-                with open('connection.txt', 'a') as f:
-                    np.set_printoptions(threshold=sys.maxsize)
-                    f.write('Epoch = ' + str(epoch) + '\n')
-                    f.write('Loss validation = ' + str(best_loss_val) + '\n')
-                    for i in range(arr_to_save.shape[0]):
-                        for j in range(arr_to_save.shape[1]):
-                            arr_to_save[i, j] = population[blueprints[0]][i, j*2]
-                    f.write(str(arr_to_save) + '\n\n\n')
-
-            
             """
             2. Найти среднее значение приспособленности нейронов
             """
