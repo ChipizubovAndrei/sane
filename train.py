@@ -4,12 +4,14 @@ from sklearn.preprocessing import normalize
 from sklearn.metrics import log_loss, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+import matplotlib.pyplot as plt
+
 
 from sane import Sane
 from model import Model
 
 """
-Датасет и погдотовка данных
+Датасет и подготовка данных
 """
 data = load_wine()
 X = data["data"]
@@ -32,20 +34,22 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
 # Число эпох
 n_epoches = 10000
 # Общее количество нейронов в популяции
-total_number_neuron = 1500
+total_number_neuron = 2000
 # Общее количество комбинаций нейронов
 total_number_blueprints = 500
 # Количество скрытых нейронов в нейронной сети
-number_hidden_neurons = 30
+number_hidden_neurons = 10
 # Количество связей у нейрона
 number_neuron_connection = 8
+
+patience = 30
 
 # Количество нейронов входного слоя
 num_input_neurons = X.shape[1]
 # Количество нейронов выходного слоя
 num_output_neurons = np.unique(Y).shape[0]
 
-model_id = 2
+model_id = 1
 
 ga_instance = Sane(
     n_epoches, log_loss, 
@@ -54,14 +58,14 @@ ga_instance = Sane(
     num_output_neurons,
     number_hidden_neurons,
     number_neuron_connection, 
-    total_number_blueprints
+    total_number_blueprints,
+    patience=patience, act_func='relu'
 )
 
-ga_instance.run(X_train, y_train, X_val, y_val, model_id)
+_, loss_arr = ga_instance.run(X_train, y_train, X_val, y_val, model_id)
 
-best_model = np.load(f"outputs/models/model_{model_id}.npy")
+best_model = np.load(f"./outputs/models/model_{model_id}.npy")
 model = Model(
-
             best_model, 
             num_input_neurons, 
             num_output_neurons, 
@@ -79,4 +83,3 @@ print(f"F1-measure test = {f1_score(y_test, np.argmax(preds, axis=1), average='m
 preds = model.forward(X_val)
 print(f"Loss val = {log_loss(y_val, preds)}")
 print(f"F1-measure val = {f1_score(y_val, np.argmax(preds, axis=1), average='micro')}")
-

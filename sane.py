@@ -23,7 +23,8 @@ class Sane:
         self, n_epoches, fitness_func, 
         num_neuron_pop, num_input_neurons, 
         num_output_neurons, num_hidden_neurons, 
-        num_neuron_connect, num_blueprints
+        num_neuron_connect, num_blueprints, 
+        patience=7, act_func='relu'
     ):
         try:
             self.n_epoches = n_epoches
@@ -37,10 +38,12 @@ class Sane:
             # Количество нейронов выходного слоя
             self.num_output_neurons = num_output_neurons
 
-            self.logger = LoggerCSV("model")
-            self.early_stopping = EarlyStopping("model", 30)
+            self.act_func = act_func
 
-            if (num_neuron_connect >= (self.num_input_neurons + 
+            self.logger = LoggerCSV("model")
+            self.early_stopping = EarlyStopping("model", patience)
+
+            if (num_neuron_connect > (self.num_input_neurons + 
                                         self.num_output_neurons)):
                 raise Exception("""Number The number of neuron connections is greater than the number of input and output neurons""")
         except Exception as e:
@@ -52,13 +55,13 @@ class Sane:
         y_train, X_val, 
         y_val, model_id
     ):
+        loss_arr = []
         """Функция оптимизации весов"""
         epoch = 0
         # Генерация популяции нейронов
         print("Генерация популяции")
         population, blueprints = self.generate_population()
         while (epoch < self.n_epoches and not self.early_stopping.early_stop):
-            epoch += 1
             """
             1. Сбрасываем приспособленности нейронов.
             """
@@ -76,7 +79,7 @@ class Sane:
                 model = Model(net, self.num_input_neurons, 
                                 self.num_output_neurons,
                                 self.num_hidden_neurons)
-                preds = model.forward(X_train)
+                preds = model.forward(X_train, f=self.act_func)
                 loss = self.fitness_func(y_train, preds)
                 blueprint_fitness[bp_id] = loss
             
@@ -89,17 +92,35 @@ class Sane:
             """
             1.3 Сохранение лучшей модели
             """
-            best_loss_train = blueprint_fitness = blueprint_fitness[0]
+            best_loss_train = blueprint_fitness[0]
             net = population[blueprints[0]]
             model = Model(
                     net, self.num_input_neurons, 
                     self.num_output_neurons,
                     self.num_hidden_neurons
                 )
-            preds = model.forward(X_val)
+            preds = model.forward(X_val, f=self.act_func)
             best_loss_val = self.fitness_func(y_val, preds)
+            loss_arr.append(best_loss_val)
             self.logger(epoch, model_id, [best_loss_train, best_loss_val])
             self.early_stopping(best_loss_val, net, epoch, model_id)
+
+
+
+            if (epoch % 10 == 0):
+                arr_to_save = np.zeros((population[blueprints[0]].shape[0], 
+                                        int(population[blueprints[0]].shape[1] / 2)),
+                                        dtype=np.int32)
+                with open('connection.txt', 'a') as f:
+                    np.set_printoptions(threshold=sys.maxsize)
+                    f.write('Epoch = ' + str(epoch) + '\n')
+                    f.write('Loss validation = ' + str(best_loss_val) + '\n')
+                    for i in range(arr_to_save.shape[0]):
+                        for j in range(arr_to_save.shape[1]):
+                            arr_to_save[i, j] = population[blueprints[0]][i, j*2]
+                    f.write(str(arr_to_save) + '\n\n\n')
+
+            
             """
             2. Найти среднее значение приспособленности нейронов
             """
@@ -124,7 +145,7 @@ class Sane:
                 """
                 2.3. Оценка сети на задаче
                 """
-                preds = model.forward(X_train)
+                preds = model.forward(X_train, f=self.act_func)
                 loss = self.fitness_func(y_train, preds)
                 """
                 2.4. Добавить оценку сети к приспособленности каждого нейрона, 
@@ -163,7 +184,9 @@ class Sane:
             8. Мутация комбинаций
             """
             blueprints = self.blueprint_mutation(blueprints, 0.01, 0.5)
-        return population[blueprints[0]]
+
+            epoch += 1
+        return population[blueprints[0]], loss_arr
 
     def update_neuron_fitness(self, n_fit, n_ids_in, loss):
         """
@@ -194,9 +217,6 @@ class Sane:
                     if (np.random.random() < pid):
                         n_id = np.random.randint(0, self.num_input_neurons + 
                                                     self.num_output_neurons)
-                        # while (n_id in populat[i]):
-                        #     n_id = np.random.randint(0, self.num_input_neurons + 
-                        #                                 self.num_output_neurons)
                         populat[i, j] = n_id
                 else:
                     if (np.random.random() < pw):
@@ -221,9 +241,6 @@ class Sane:
                 populat[-i] = np.concatenate((populat[n1_id, 0:p],
                                                 populat[n2_id, p:self.num_neuron_connect*2]), 
                                                 axis=0)
-                # populat[-(i+1)] = np.concatenate((populat[n2_id, 0:p],
-                #                                     populat[n1_id, p:self.num_neuron_connect*2]), 
-                #                                     axis=0)
                 populat[-(i+1)] = populat[n1_id]
         return populat
 
@@ -286,9 +303,6 @@ class Sane:
             for j in range(0, self.num_neuron_connect*2 - 1, 2):
                 neuron_id = np.random.randint(0, self.num_input_neurons + 
                                                 self.num_output_neurons)
-                # while (neuron_id in population[i]):
-                #     neuron_id = np.random.randint(0, self.num_input_neurons + 
-                #                                     self.num_output_neurons)
                 population[i][j] = neuron_id
                 population[i][j+1] = np.random.random() - 0.5
         blueprints = np.zeros((self.num_blueprints, 

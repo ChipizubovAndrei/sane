@@ -14,13 +14,13 @@ class LoggerCSV:
         try:
             if epoch == 0:
                 mode = 'w'
-                with open(f'outputs/logs/{self.model_name}_{counter}.csv', mode, newline='') as file:
+                with open(f'./outputs/logs/{self.model_name}_{counter}.csv', mode, newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow(["Train loss", "Val Loss"])
             else:
                 mode = 'a'
             
-            with open(f'outputs/logs/{self.model_name}_{counter}.csv', mode, newline='') as file:
+            with open(f'./outputs/logs/{self.model_name}_{counter}.csv', mode, newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(accuracy)
             file.close()
@@ -46,7 +46,7 @@ class SaveBestModel:
             print(f"\nBest validation loss: {self.best_valid_loss}")
             print(f"\nSaving best model for epoch: {epoch+1}\n")
             np.save(
-                f'outputs/models/{self.model_name}_{counter}',
+                f'./outputs/models/{self.model_name}_{counter}',
                 model
             )
 

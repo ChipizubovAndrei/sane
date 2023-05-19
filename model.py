@@ -6,8 +6,9 @@ class Model:
     Класс модели однослойной ИНС
     Аргументы:
         - neural_network_neurons - параметры нейронной сети
-        - n_input_neurons - Количество выходных нейронов
+        - n_input_neurons - Количество входных нейронов
         - n_output_neurons - Количество выходных нейронов
+        - n_hidden_neurons - количество нейронов скрытого слоя
     """
     def __init__(
         self, neural_network_neurons,
@@ -26,13 +27,18 @@ class Model:
         self.neural_network_neurons = neural_network_neurons # neuron_population[neuron_list]     
 
 
-    def forward(self, x):
+    def forward(self, x, f='relu'):
         """
         Функция для вычисления прямого 
         распространения сигнала по сети
         """
+        if f == 'sigmoid':
+            act = self.Sigmoid
+        else:
+            act = self.ReLU
+        
         W1, W2 = self.create_weight_matrix()
-        return self.SoftMax(np.matmul(self.ReLU(np.matmul(x, W1)), W2))
+        return self.SoftMax(np.matmul(act(np.matmul(x, W1)), W2))
 
     def ReLU(self, x):
         """
@@ -42,6 +48,15 @@ class Model:
             for j in range(x.shape[1]):
                 if x[i, j] < 0:
                     x[i, j] = 0
+        return x
+
+    def Sigmoid(self, x):
+        """
+        Функция активации ReLU
+        """
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
+                x[i, j] =  1 / (1 + np.exp(-x[i, j]))
         return x
 
     def SoftMax(self, x):
