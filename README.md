@@ -19,7 +19,7 @@ For working of algorithm and neural net model:
 - Logging metric values in the learning process, saving hyperparameter values
 </br>
 
-### ESP-Algorithm
+### SANE-Algorithm
 ---
 SANE can be used to evolve single-layer feedforward neural network that consists of a single hidden
 layer.
