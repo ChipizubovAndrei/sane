@@ -56,7 +56,9 @@ class Sane:
         y_val, model_id
     ):
         loss_arr = []
-        """Функция оптимизации весов"""
+        """
+        Функция оптимизации весов
+        """
         epoch = 0
         # Генерация популяции нейронов
         print("Генерация популяции")
@@ -267,9 +269,6 @@ class Sane:
                 bp[-i] = np.concatenate((bp[n1_id, 0:p], 
                                         bp[n2_id, p:self.num_hidden_neurons]), 
                                         axis=0)
-                # bp[-(i+1)] = np.concatenate((bp[n2_id, 0:p],
-                #                             bp[n1_id, p:self.num_hidden_neurons]), 
-                #                             axis=0)
                 bp[-(i+1)] = bp[n1_id]
         return bp
 
